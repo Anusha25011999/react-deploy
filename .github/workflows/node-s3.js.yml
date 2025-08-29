@@ -1,15 +1,19 @@
 name: Build React App
 
+# This section is for both manual and automatic trigger
 on:
   push:
     branches:
       - master
   workflow_dispatch:    
-
+env:
+  ECR_REGISTRY: 836839767785.dkr.ecr.us-east-2.amazonaws.com
+  ECR_REPOSITORY: anusha-react-images
+  BUILD_NUMBER: ${{ github.run_number }}
 jobs:
   build:
     runs-on: ubuntu-latest
-    environment: dev
+    environment: dev  # setting up enviornments
     strategy:
       matrix:
         node-version: [18]
@@ -34,14 +38,27 @@ jobs:
 
       - name: Print AWS region
         run: echo ${{vars.AWS_REGION}}
-
+# Configuring aws credentials
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ vars.AWS_REGION }}
-
-      - name: Sync build folder to S3
+# Copying the build to s3
+      - name: copy build folder to S3
         run: |
           aws s3 cp build/ s3://${{ vars.S3_BUCKET_NAME }}/build/ --recursive
+
+# Authenticates to ECR registry
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+        
+# Builds the Docker image and tags it with the build number
+      - name: Build Docker image
+        run: docker build -t ${{ vars.ECR_REGISTRY }}/${{ vars.ECR_REPOSITORY }}:${{ env.BUILD_NUMBER }} .
+        
+ # Pushes the Docker image to ECR
+      - name: Push Docker image to ECR
+        run: docker push ${{ vars.ECR_REGISTRY }}/${{ vars.ECR_REPOSITORY }}:${{ env.BUILD_NUMBER }}
+       
