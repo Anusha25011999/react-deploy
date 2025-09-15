@@ -32,7 +32,8 @@ jobs:
       - name: Set build version
         id: set-version
         run: |
-          VERSION=$(jq -r '.dev' versions.json)
+          ENV_KEY="${{ github.ref_name }}"
+          VERSION=$(jq -r --arg key "$ENV_KEY" '.[$key]' versions.json)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo " The version is $VERSION"
           
