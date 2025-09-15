@@ -63,40 +63,40 @@ jobs:
     outputs:
       version: ${{ steps.set-version.outputs.version }}
           
-  # CodeQL Scan job
-  scan:                                
-    needs: build  
-    runs-on: ubuntu-latest
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
-    environment: ${{ github.ref_name }}
+  # # CodeQL Scan job
+  # scan:                                
+  #   needs: build  
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     actions: read
+  #     contents: read
+  #     security-events: write
+  #   environment: ${{ github.ref_name }}
     
-    steps:
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: frontend-build-${{ needs.build.outputs.version }}
-          path: download
+  #   steps:
+  #     - name: Download build artifact
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: frontend-build-${{ needs.build.outputs.version }}
+  #         path: download
 
-      - name: Listing directories
-        run: ls -la
+  #     - name: Listing directories
+  #       run: ls -la
 
-      - name: listing download folder
-        run : ls -l ./download/
+  #     - name: listing download folder
+  #       run : ls -l ./download/
           
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3   
-        with:
-          languages: javascript
-          queries: security-and-quality 
+  #     - name: Initialize CodeQL
+  #       uses: github/codeql-action/init@v3   
+  #       with:
+  #         languages: javascript
+  #         queries: security-and-quality 
 
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v3   
+  #     - name: Autobuild
+  #       uses: github/codeql-action/autobuild@v3   
 
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3    
+  #     - name: Perform CodeQL Analysis
+  #       uses: github/codeql-action/analyze@v3    
         
           
   # # Publish to S3 job
