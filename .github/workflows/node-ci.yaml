@@ -56,40 +56,39 @@ jobs:
       - name: upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: frontend-build-v${{ steps.set-version.outputs.version }}
+          name: frontend-build-${{ steps.set-version.outputs.version }}
           path: build/
+    outputs:
+      version: ${{ steps.set-version.outputs.version }}
           
-  # # CodeQL Scan job
-  # scan:                                
-  #   needs: build  
-  #   runs-on: ubuntu-latest
-  #   permissions:
-  #     actions: read
-  #     contents: read
-  #     security-events: write
-  #   environment: ${{ github.ref_name }}
+  # CodeQL Scan job
+  scan:                                
+    needs: build  
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    environment: ${{ github.ref_name }}
+    
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build-${{ needs.build.outputs.version }}
+          path: download
+          
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2    
+        with:
+          languages: javascript
+          queries: security-and-quality 
 
-  #   steps:
-  #     - name: Download build artifact
-  #       uses: actions/download-artifact@v3
-  #       with:
-  #         name: frontend-build
-  #         path: ${{ steps.build-path.outputs.build-path }}
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v2   
 
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v3 
-      
-  #     - name: Initialize CodeQL
-  #       uses: github/codeql-action/init@v2    
-  #       with:
-  #         languages: javascript
-  #         queries: security-and-quality 
-
-  #     - name: Autobuild
-  #       uses: github/codeql-action/autobuild@v2   
-
-  #     - name: Perform CodeQL Analysis
-  #       uses: github/codeql-action/analyze@v2    
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2    
         
           
   # # Publish to S3 job
