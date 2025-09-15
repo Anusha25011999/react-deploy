@@ -52,12 +52,17 @@ jobs:
       #   run: |
       #     mkdir -p build/frontend-build-v${{ steps.set-version.outputs.version }}
       #     cp -r dist/* build/frontend-build-v${{ steps.set-version.outputs.version }}
+      - name: Listing directories
+        run: ls -l a
 
+      
       - name: upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: frontend-build-${{ steps.set-version.outputs.version }}
           path: build/
+      - name: listing build folder
+        run : ls -l ./build/
     outputs:
       version: ${{ steps.set-version.outputs.version }}
           
@@ -77,6 +82,12 @@ jobs:
         with:
           name: frontend-build-${{ needs.build.outputs.version }}
           path: download
+
+      - name: Listing directories
+        run: ls -l a
+
+      - name: listing download folder
+        run : ls -l ./download/
           
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3   
