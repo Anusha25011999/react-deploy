@@ -37,6 +37,7 @@ jobs:
         run: |
           VERSION="v1.0.${RUN_NUMBER}-${REF_NAME}-$(date +'%Y%m%d')"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo " The version is $VERSION"
           
       - name: Install dependencies
         run: npm ci
