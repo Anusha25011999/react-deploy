@@ -33,10 +33,12 @@ jobs:
 
       - name: Set build version
         id: set-version
+        env:
+        RUN_NUMBER: ${{ github.run_number }}
+        REF_NAME: ${{ github.ref_name }}
         run: |
-          VERSION="v1.0.${{ github.run_number }}-${{ github.ref_name }}-$(date +'%Y%m%d')"
+          VERSION="v1.0.${RUN_NUMBER}-${REF_NAME}-$(date +'%Y%m%d')"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-
       - name: Install dependencies
         run: npm ci
 
@@ -46,16 +48,16 @@ jobs:
       - name: Build project
         run: npm run build
       
-      - name: Prepare versioned build folder
-        run: |
-          mkdir -p build/frontend-build-v${{ steps.set-version.outputs.version }}
-          cp -r dist/* build/frontend-build-v${{ steps.set-version.outputs.version }}
+      # - name: Prepare versioned build folder
+      #   run: |
+      #     mkdir -p build/frontend-build-v${{ steps.set-version.outputs.version }}
+      #     cp -r dist/* build/frontend-build-v${{ steps.set-version.outputs.version }}
 
       - name: upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: frontend-build
-          path: build/frontend-build-v${{steps.set-version.outputs.version}}
+          path: build-v${{ steps.set-version.outputs.version }}
           
   # # CodeQL Scan job
   # scan:                                
