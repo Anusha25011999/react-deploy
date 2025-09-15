@@ -63,7 +63,7 @@ jobs:
       - name: Commit and push changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore: Version Updated to ${{github.ref_name }} key"
+          commit_message: "Version Updated to ${{github.ref_name }} key"
           file_pattern: versions.json
           github_token: ${{ secrets.GITHUB_TOKEN }}
           
