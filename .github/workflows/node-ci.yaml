@@ -17,9 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ github.ref_name }}
 
-    strategy:
-      matrix:
-        node-version: [22.19.0]
+  
 
     steps:
       - name: Checkout repository
@@ -28,7 +26,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '${{ matrix.node-version }}'
+          node-version: '22.19.0'
           cache: 'npm'
 
       - name: Set build version
