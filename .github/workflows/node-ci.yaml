@@ -37,6 +37,7 @@ jobs:
         run: |
           VERSION="v1.0.${RUN_NUMBER}-${REF_NAME}-$(date +'%Y%m%d')"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+          
       - name: Install dependencies
         run: npm ci
 
@@ -54,7 +55,7 @@ jobs:
       - name: upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: frontend-build
+          name: frontend-build-v${{ steps.set-version.outputs.version }}
           path: build/
           
   # # CodeQL Scan job
