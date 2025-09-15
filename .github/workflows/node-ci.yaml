@@ -55,7 +55,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: frontend-build
-          path: build-v${{ steps.set-version.outputs.version }}
+          path: build/
           
   # # CodeQL Scan job
   # scan:                                
