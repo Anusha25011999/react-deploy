@@ -1,0 +1,134 @@
+name: Build CI(Build,Test,Scan and Publish)
+on:
+  # push:
+  #   branches:
+  #     - [dev,qa,prod]
+  # pull_request:
+  #   branches:
+  #     - [dev,qa,prod]
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-2
+
+jobs:
+  # Build job
+  build:                                     
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref_name }}
+
+    strategy:
+      matrix:
+        node-version: [22.19.0]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '${{ matrix.node-version }}'
+          cache: 'npm'
+
+      - name: Set build version
+        id: set-version
+        run: |
+          VERSION="v1.0.${{ github.run_number }}-${{ github.ref_name }}-$(date +'%Y%m%d')"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test --if-present
+
+      - name: Build project
+        run: npm run build
+      
+      - name: Prepare versioned build folder
+        run: |
+          mkdir -p build/frontend-build-v${{ steps.set-version.outputs.version }}
+          cp -r dist/* build/frontend-build-v${{ steps.set-version.outputs.version }}
+
+      - name: upload build artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: frontend-build
+          path: build/frontend-build-v${{steps.set-version.outputs.version}}
+          
+  # # CodeQL Scan job
+  # scan:                                
+  #   needs: build  
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     actions: read
+  #     contents: read
+  #     security-events: write
+  #   environment: ${{ github.ref_name }}
+
+  #   steps:
+  #     - name: Download build artifact
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: frontend-build
+  #         path: ${{ steps.build-path.outputs.build-path }}
+
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v3 
+      
+  #     - name: Initialize CodeQL
+  #       uses: github/codeql-action/init@v2    
+  #       with:
+  #         languages: javascript
+  #         queries: security-and-quality 
+
+  #     - name: Autobuild
+  #       uses: github/codeql-action/autobuild@v2   
+
+  #     - name: Perform CodeQL Analysis
+  #       uses: github/codeql-action/analyze@v2    
+        
+          
+  # # Publish to S3 job
+  # publish:                            
+  #   needs: [build, scan]
+  #   runs-on: ubuntu-latest
+  #   environment: ${{ github.ref_name }} 
+  #   permissions:
+  #     id-token: write
+  #     contents: read 
+  #   steps:
+  #     - name: Download build artifact
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: build-${{needs.build.outputs.version}}
+  #         path: ${{ steps.build-path.outputs.build-path }}
+
+  #     - name: Set AWS role based on Branch
+  #       id: set-role
+  #       run: |
+  #         if [[ "${{github.ref_name}}" == "prod" ]]; then
+  #           echo "AWS_ROLE_TO_ASSUME=${{secrets.AWS_ROLE_TO_ASSUME_PROD}}" >> $GITHUB_ENV
+  #         elif [[ "${{github.ref_name}}" == "qa" ]]; then
+  #           echo "AWS_ROLE_TO_ASSUME=${{secrets.AWS_ROLE_TO_ASSUME_QA}}" >> $GITHUB_ENV
+  #         elif [[ "${{github.ref_name}}" == "dev" ]]; then
+  #           echo "AWS_ROLE_TO_ASSUME=${{secrets.AWS_ROLE_TO_ASSUME_DEV}}" >> $GITHUB_ENV
+  #         else
+  #           echo "Error: Unsupported branch '${{github.ref_name}}'. Deployment aborted."
+  #           exit 1
+  #         fi
+  #         echo "Set AWS_ROLE_TO_ASSUME to ${{ env.AWS_ROLE_TO_ASSUME }}"
+
+  #     - name: Configure AWS credentials
+  #       uses: aws-actions/configure-aws-credentials@v2  
+  #       with:
+  #         role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
+  #         aws-region: ${{ env.AWS_REGION }}
+
+  #     - name: Deploy to s3
+  #       uses: jakejarvis/s3-sync-action@v0.5.1
+  #       with:
+  #         bucket: my-s3-bucket
+  #         region: ${{ env.AWS_REGION }}
+  #         source-dir: ${{ steps.build-path.outputs.build-path }}
