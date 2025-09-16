@@ -2,14 +2,30 @@ name: Build React App
 
 # This section is for both manual and automatic trigger
 on:
-  push:
-    branches:
-      - master
-  workflow_dispatch:    
+  # push:
+  #   branches:
+  #     - master
+  # workflow_dispatch: 
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Enter your branch to deploy'
+        required: true
+        default: 'master'
+
+      environment:
+        description: 'Select environment to publish docker image'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - qa
+          - stage
 env:
   ECR_REGISTRY: 836839767785.dkr.ecr.us-east-2.amazonaws.com
   ECR_REPOSITORY: anusha-react-images
-  BUILD_NUMBER: ${{ github.run_number }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -21,6 +37,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -38,6 +56,13 @@ jobs:
 
       - name: Print AWS region
         run: echo ${{vars.AWS_REGION}}
+
+      - name: Set build version
+        id: set-version
+        run: |
+          VERSION=$(date +'%Y%m%d_%H%M%S')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo " The version is $VERSION"
 # Configuring aws credentials
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -48,7 +73,7 @@ jobs:
 # Copying the build to s3
       - name: copy build folder to S3
         run: |
-          aws s3 cp build/ s3://${{ vars.S3_BUCKET_NAME }}/build_${{ env.BUILD_NUMBER}}/ --recursive
+          aws s3 cp build/ s3://${{ vars.S3_BUCKET_NAME }}/build_${{ steps.set-version.outputs.version }}/ --recursive
 
 # Authenticates to ECR registry
       - name: Login to Amazon ECR
@@ -56,9 +81,9 @@ jobs:
         
 # Builds the Docker image and tags it with the build number
       - name: Build Docker image
-        run: docker build -t ${{ vars.ECR_REGISTRY }}/${{ vars.ECR_REPOSITORY }}:${{ env.BUILD_NUMBER }} .
+        run: docker build -t ${{ vars.ECR_REGISTRY }}/${{ vars.ECR_REPOSITORY }}:${{ steps.set-version.outputs.version }} .
         
  # Pushes the Docker image to ECR
       - name: Push Docker image to ECR
-        run: docker push ${{ vars.ECR_REGISTRY }}/${{ vars.ECR_REPOSITORY }}:${{ env.BUILD_NUMBER }}
+        run: docker push ${{ vars.ECR_REGISTRY }}/${{ vars.ECR_REPOSITORY }}:${{ steps.set-version.outputs.version }}
        
